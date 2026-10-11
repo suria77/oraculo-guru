@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oráculo de Gurús · Dharma Eterno</title>
+<style>
+  html, body { margin: 0; background: #12061c; }
+  body { padding: 8px; box-sizing: border-box; min-height: 100vh; }
+  .entry-title, .page-title, h1.entry-title { display: none !important; }
+  .oracle-container { position: relative; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85vh; background-image: url('fondo.webp'); background-color: #12061c; background-size: cover; background-position: center; background-repeat: no-repeat; font-family: 'Helvetica Neue', Arial, sans-serif; color: #f4eefa; padding: 20px; border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); overflow: hidden; user-select: none; -webkit-user-select: none; margin-top: 10px; }
+
+  .logo-footer { position: absolute; bottom: 30px; left: 30px; width: 147px; height: auto; opacity: 0.75; z-index: 100000; pointer-events: none; }
+
+  .oracle-instruction { font-size: 22px; font-weight: bold; color: #fcf6ba; margin-bottom: 25px; letter-spacing: 2px; text-transform: uppercase; text-align: center; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8); transition: opacity 0.5s ease; }
+  .oracle-layout { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 950px; gap: 20px; transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); }
+  .carousel-window { width: 100%; max-width: 500px; height: 480px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+  .carousel-track { display: flex; position: absolute; left: 0; top: 30px; will-change: transform; }
+  .card-wrapper { width: 260px; height: 390px; margin: 0 20px; flex-shrink: 0; transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); }
+  .card-wrapper.active-card { perspective: 1000px; }
+  .card-3d { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  .card-wrapper.active-card .card-3d { transform-style: preserve-3d; }
+  .card-3d.flipped { transform: rotateY(180deg); }
+  .card-face { position: absolute; width: 100%; height: 100%; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7); border: 2px solid rgba(212, 175, 55, 0.4); overflow: hidden; background-color: #0d0818; }
+  .card-wrapper.active-card .card-face { backface-visibility: hidden; }
+  .card-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card-front { transform: none; }
+  .card-wrapper.active-card .card-front { transform: rotateY(180deg); }
+  .card-wrapper:not(.active-card) .card-front { display: none; }
+  .oracle-container.revealed .card-wrapper:not(.active-card) { opacity: 0; transform: scale(0.8); pointer-events: none; }
+  .oracle-container.revealed .card-wrapper.active-card { transform: scale(1.15); }
+
+  .oracle-text-panel { width: 100%; max-width: 460px; padding: 26px; border-radius: 12px; background-color: rgba(13, 8, 24, 0.95); border: 1px solid rgba(252, 246, 186, 0.35); opacity: 0; transform: translateY(20px); transition: opacity 0.7s ease, transform 0.7s ease; display: none; text-align: center; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .oracle-text-panel.visible { display: block; opacity: 1; transform: translateY(0); }
+  .oracle-title { font-size: 20px; color: #fcf6ba; margin-bottom: 8px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+  .oracle-quote { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.45; color: #fff4c7; margin: 0 0 4px; }
+  .oracle-author { font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: #d9c98a; margin-bottom: 16px; }
+  .oracle-description { font-size: 16px; color: #ece6f6; line-height: 1.65; margin-bottom: 22px; text-align: left; }
+
+  .audio-player { display: flex; align-items: center; gap: 14px; }
+  .audio-btn { flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ffd94d 0%, #fff6b0 30%, #ffcb1f 60%, #e6a800 100%); box-shadow: 0 4px 16px rgba(255, 200, 0, 0.55), 0 0 0 3px rgba(255, 217, 77, 0.2); transition: transform 0.15s ease, filter 0.15s ease; padding: 0; }
+  .audio-btn svg { width: 20px; height: 20px; fill: #1a1206; }
+  .audio-btn .icon-play { margin-left: 3px; }
+  .audio-btn:hover { transform: scale(1.08); filter: brightness(1.08); }
+  .audio-btn:active { transform: scale(0.95); }
+  .audio-progress-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .audio-progress { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.2); outline: none; cursor: pointer; margin: 0; }
+  .audio-progress::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #ffd94d; box-shadow: 0 1px 4px rgba(0,0,0,0.6); cursor: pointer; margin-top: -4.5px; }
+  .audio-time { font-size: 13px; color: #f4eefa; letter-spacing: 0.5px; text-align: left; opacity: 0.9; }
+
+  .oracle-btn { background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%); color: #0b0713; border: none; padding: 16px 45px; font-size: 18px; font-weight: 800; border-radius: 30px; cursor: pointer; letter-spacing: 1.5px; box-shadow: 0 6px 20px rgba(170, 119, 28, 0.4); transition: all 0.3s ease; text-transform: uppercase; margin-top: 25px; z-index: 100000; }
+  .oracle-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  @media (min-width: 768px) {
+    .oracle-layout { flex-direction: row; justify-content: center; gap: 15px; }
+    .oracle-text-panel { transform: translateX(15px); }
+    .oracle-text-panel.visible { transform: translateX(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="oracle-container" id="oracleContainer">
+  <img src="logo.png" class="logo-footer" alt="Dharma Eterno">
+
+  <div class="oracle-instruction" id="mainInstruction">Desliza para obtener una carta</div>
+  <div class="oracle-layout">
+    <div class="carousel-window" id="carouselWindow">
+      <div class="carousel-track" id="carouselTrack"></div>
+    </div>
+    <div class="oracle-text-panel" id="textPanel">
+      <div class="oracle-title" id="cardTitle"></div>
+      <div class="oracle-quote" id="cardQuote"></div>
+      <div class="oracle-author" id="cardAuthor"></div>
+      <div class="oracle-description" id="cardDesc"></div>
+      <div class="audio-player" id="audioPlayer">
+        <button class="audio-btn" id="audioBtn" onclick="toggleAudio()" aria-label="Reproducir audio">
+          <svg class="icon-play" id="iconPlay" viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"></polygon></svg>
+          <svg class="icon-pause" id="iconPause" viewBox="0 0 24 24" style="display:none;"><rect x="5" y="4" width="5" height="16"></rect><rect x="14" y="4" width="5" height="16"></rect></svg>
+        </button>
+        <div class="audio-progress-wrap">
+          <input type="range" class="audio-progress" id="audioProgress" min="0" max="100" value="0" step="0.1">
+          <div class="audio-time" id="audioTime">0:00 / 0:00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="oracle-btn" id="actionBtn" onclick="consultOracle()">Consulta el oráculo</button>
+</div>
+
+<script>
+  // Sonido del giro (mismo archivo que en el oráculo Atman)
+  const magicSound = new Audio('sonido-giro.mp3');
+
+  // Para añadir una carta: nueva imagen NN.webp, nuevo audio NN.mp3 y una línea aquí.
+  const cardTexts = [
+    { title: "PERCEPCIÓN", author: "Adi Shankara", quote: "Un objeto percibido depende de la mente de quien lo observa", audio: "01.mp3", img: "01.webp", desc: "Dos personas pueden mirar la misma situación y vivir historias muy distintas. Lo que ves no es solo lo que ocurre fuera, sino también la lente desde la que miras. Si tu mente está en calma, el mundo se vuelve más amable. Si está agitada, todo parece una amenaza.<br><br>Hoy, antes de reaccionar ante algo que te moleste, haz una pausa y pregúntate: ¿qué estoy mirando realmente, y desde dónde? Al cambiar tu mirada, cambia también lo que encuentras." },
+    { title: "ACCIÓN SAGRADA", author: "Anandamayi Ma", quote: "Si caíste al suelo, usa el mismo suelo para levantarte de nuevo.", audio: "02.mp3", img: "02.webp", desc: "Una caída no te quita el camino, te muestra dónde apoyarte. El mismo suelo que hoy sientes bajo ti es el punto firme desde el que puedes empujar y volver a ponerte en pie. No hace falta levantarse deprisa ni sin dolor, basta con hacerlo con sinceridad.<br><br>Hoy, si algo no salió como esperabas, no te quedes en la culpa. Apóyate en lo que has aprendido, da un pequeño paso, y recuerda que levantarte también es un acto sagrado." },
+    { title: "DISTANCIA", author: "Aurobindo", quote: "Para ver, hay que dejar de estar en medio de la imagen", audio: "03.mp3", img: "03.webp", desc: "Cuando estamos metidos de lleno en una preocupación, solo vemos nuestro propio miedo. Con un poco de distancia, el cuadro se aclara y aparecen opciones que antes no podíamos percibir. Dar un paso atrás no es huir, es ganar perspectiva.<br><br>Hoy, ante un problema que te pese, respira hondo e imagina que lo observas desde fuera, como un testigo sereno. Desde ahí, con calma, verás con mayor claridad lo que de verdad necesita tu atención." }
+  ];
+
+  const backImage = "dorso.webp";
+  const track = document.getElementById('carouselTrack');
+  const windowEl = document.getElementById('carouselWindow');
+  const cardWidth = 300;
+  const totalCards = cardTexts.length;
+  let currentIndex = totalCards;
+  let isFlipped = false;
+  let trackX = 0;
+
+  function shuffleCards(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } }
+  function centerOffset() { return (windowEl.offsetWidth / 2) - (cardWidth / 2); }
+  function positionForIndex(i) { return centerOffset() - i * cardWidth; }
+  function indexForPosition(x) { return (centerOffset() - x) / cardWidth; }
+
+  function buildCarousel() {
+    track.innerHTML = "";
+    let g = 0;
+    for (let s = 0; s < 3; s++) {
+      cardTexts.forEach((c, idx) => {
+        const w = document.createElement('div');
+        w.className = 'card-wrapper';
+        w.id = `wrapper-${g}`;
+        w.setAttribute('data-original-index', idx);
+        w.innerHTML = `<div class="card-3d" id="card-${g}"><div class="card-face card-back"><img src="${backImage}" draggable="false" alt=""></div><div class="card-face card-front"><img src="${c.img}" draggable="false" alt="${c.title}"></div></div>`;
+        track.appendChild(w);
+        g++;
+      });
+    }
+    currentIndex = totalCards + Math.floor(Math.random() * totalCards);
+    trackX = positionForIndex(currentIndex);
+    document.querySelectorAll('.card-wrapper').forEach(w => w.classList.remove('active-card'));
+    const act = document.getElementById(`wrapper-${currentIndex}`);
+    if (act) act.classList.add('active-card');
+    applyTrackPosition(false);
+  }
+
+  function applyTrackPosition(animate) {
+    track.style.transition = animate ? 'transform 0.4s cubic-bezier(0.215, 0.610, 0.355, 1)' : 'none';
+    track.style.transform = `translateX(${trackX}px)`;
+    const idx = Math.round(indexForPosition(trackX));
+    if (idx !== currentIndex) {
+      currentIndex = idx;
+      document.querySelectorAll('.card-wrapper.active-card').forEach(w => w.classList.remove('active-card'));
+      const act = document.getElementById(`wrapper-${currentIndex}`);
+      if (act) act.classList.add('active-card');
+    }
+  }
+
+  function updateTrackPosition(anim = true) {
+    trackX = positionForIndex(currentIndex);
+    applyTrackPosition(anim);
+  }
+
+  function wrapIfNeeded() {
+    const idxFloat = indexForPosition(trackX);
+    const period = totalCards * cardWidth;
+    if (idxFloat < totalCards * 0.5) { trackX -= period; }
+    else if (idxFloat > totalCards * 2.5) { trackX += period; }
+  }
+
+  const audioEl = new Audio();
+  const progressEl = document.getElementById('audioProgress');
+  const timeEl = document.getElementById('audioTime');
+  let isSeeking = false;
+
+  function formatTime(sec) {
+    if (!isFinite(sec) || isNaN(sec) || sec < 0) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function paintProgress(pct) { progressEl.style.background = `linear-gradient(to right, #ffd94d ${pct}%, rgba(255,255,255,0.2) ${pct}%)`; }
+  function showPlayIcon() { document.getElementById('iconPlay').style.display = 'block'; document.getElementById('iconPause').style.display = 'none'; }
+  function showPauseIcon() { document.getElementById('iconPlay').style.display = 'none'; document.getElementById('iconPause').style.display = 'block'; }
+
+  audioEl.addEventListener('loadedmetadata', () => { progressEl.max = audioEl.duration || 100; timeEl.textContent = `0:00 / ${formatTime(audioEl.duration)}`; });
+  audioEl.addEventListener('timeupdate', () => {
+    if (isSeeking) return;
+    progressEl.value = audioEl.currentTime;
+    const pct = audioEl.duration ? (audioEl.currentTime / audioEl.duration) * 100 : 0;
+    paintProgress(pct);
+    timeEl.textContent = `${formatTime(audioEl.currentTime)} / ${formatTime(audioEl.duration)}`;
+  });
+  audioEl.addEventListener('ended', () => { showPlayIcon(); progressEl.value = 0; paintProgress(0); });
+
+  progressEl.addEventListener('input', () => {
+    isSeeking = true;
+    const pct = audioEl.duration ? (progressEl.value / audioEl.duration) * 100 : 0;
+    paintProgress(pct);
+    timeEl.textContent = `${formatTime(progressEl.value)} / ${formatTime(audioEl.duration)}`;
+  });
+  progressEl.addEventListener('change', () => {
+    if (audioEl.src) audioEl.currentTime = progressEl.value;
+    isSeeking = false;
+  });
+
+  function setupAudioButton(cardData) {
+    audioEl.pause();
+    audioEl.currentTime = 0;
+    audioEl.src = cardData.audio || '';
+    showPlayIcon();
+    progressEl.value = 0;
+    progressEl.max = 100;
+    paintProgress(0);
+    timeEl.textContent = '0:00 / 0:00';
+  }
+
+  function toggleAudio() {
+    if (!audioEl.src) return;
+    if (audioEl.paused) { audioEl.play(); showPauseIcon(); } else { audioEl.pause(); showPlayIcon(); }
+  }
+
+  function consultOracle() {
+    const container = document.getElementById('oracleContainer');
+    const btn = document.getElementById('actionBtn');
+    const textPanel = document.getElementById('textPanel');
+    const activeCard = document.getElementById(`card-${currentIndex}`);
+
+    if (isFlipped) {
+      audioEl.pause();
+      textPanel.classList.remove('visible');
+      setTimeout(() => { textPanel.style.display = 'none'; activeCard.classList.remove('flipped'); container.classList.remove('revealed'); document.getElementById('mainInstruction').style.opacity = "1"; updateTrackPosition(true); }, 200);
+      btn.innerText = "Consulta el oráculo";
+      isFlipped = false;
+      return;
+    }
+
+    if (activeCard) {
+      magicSound.currentTime = 0;
+      magicSound.play().catch(e => console.log("Audio de magia esperando interacción"));
+
+      const originalIndex = document.getElementById(`wrapper-${currentIndex}`).getAttribute('data-original-index');
+      const cardData = cardTexts[originalIndex];
+      document.getElementById('cardTitle').innerHTML = cardData.title;
+      document.getElementById('cardQuote').textContent = "“" + cardData.quote.replace(/[.“”]+$/, "") + "”";
+      document.getElementById('cardAuthor').textContent = cardData.author;
+      document.getElementById('cardDesc').innerHTML = cardData.desc;
+      setupAudioButton(cardData);
+      container.classList.add('revealed');
+      activeCard.classList.add('flipped');
+      isFlipped = true;
+      btn.innerText = "Elegir otra carta";
+      document.getElementById('mainInstruction').style.opacity = "0";
+      textPanel.style.display = 'block';
+      setTimeout(() => { textPanel.classList.add('visible'); }, 300);
+    }
+  }
+
+  let isDragging = false, dragMoved = false, startX = 0, startTrackX = 0, lastX = 0, lastTime = 0, velocity = 0, rafId = null;
+
+  function clientX(e) { return e.type.includes('touch') ? ((e.touches && e.touches.length) ? e.touches[0].clientX : e.changedTouches[0].clientX) : e.clientX; }
+
+  windowEl.addEventListener('touchstart', dragStart, { passive: true });
+  windowEl.addEventListener('touchend', dragEnd);
+  windowEl.addEventListener('touchmove', dragMove, { passive: false });
+  windowEl.addEventListener('mousedown', dragStart);
+  windowEl.addEventListener('mouseup', dragEnd);
+  windowEl.addEventListener('mouseleave', dragEnd);
+  windowEl.addEventListener('mousemove', dragMove);
+
+  function dragStart(e) {
+    if (isFlipped) return;
+    cancelAnimationFrame(rafId);
+    isDragging = true; dragMoved = false; startX = clientX(e); lastX = startX; lastTime = Date.now(); velocity = 0; startTrackX = trackX; track.style.transition = 'none';
+  }
+
+  function dragMove(e) {
+    if (!isDragging) return;
+    const x = clientX(e); const diff = x - startX;
+    if (Math.abs(diff) > 8) { dragMoved = true; if (e.cancelable) e.preventDefault(); }
+    const now = Date.now(); const dt = now - lastTime;
+    if (dt > 0) velocity = (x - lastX) / dt;
+    lastX = x; lastTime = now; trackX = startTrackX + diff; applyTrackPosition(false);
+  }
+
+  function dragEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    if (!dragMoved) { snapToNearest(); return; }
+    velocity = Math.max(-2.2, Math.min(2.2, velocity));
+    startMomentum();
+  }
+
+  function startMomentum() {
+    function step(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(ts - lastTs, 48); lastTs = ts;
+      trackX += velocity * dt; velocity *= Math.pow(0.945, dt / 16.67);
+      wrapIfNeeded(); applyTrackPosition(false);
+      if (Math.abs(velocity) > 0.015) rafId = requestAnimationFrame(step); else snapToNearest();
+    }
+    let lastTs = null; rafId = requestAnimationFrame(step);
+  }
+
+  function snapToNearest() { currentIndex = Math.round(indexForPosition(trackX)); trackX = positionForIndex(currentIndex); applyTrackPosition(true); }
+  window.addEventListener('resize', () => { trackX = positionForIndex(currentIndex); applyTrackPosition(false); });
+
+  shuffleCards(cardTexts);
+  buildCarousel();
+</script>
+</body>
+</html>
